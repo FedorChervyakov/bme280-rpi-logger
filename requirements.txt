@@ -1,0 +1,9 @@
+pytz==2023.3 ; python_version >= "3.8" and python_version < "4.0" \
+    --hash=sha256:1d8ce29db189191fb55338ee6d0387d82ab59f3d00eac103412d64e0ebd0c588 \
+    --hash=sha256:a151b3abb88eda1d4e34a9814df37de2a80e301e68ba0fd856fb9b46bfbbbffb
+rpi-bme280==0.2.4 ; python_version >= "3.8" and python_version < "4.0" \
+    --hash=sha256:5b0e9309a2d518f9e120f1343ed4fc81ff69b196db748eabf96dd575a9f48c5d \
+    --hash=sha256:9dee82a9c4eef23606dc04e4f582821ebafb21fb943dbf588cf38fc0b636fc39
+smbus2==0.4.2 ; python_version >= "3.8" and python_version < "4.0" \
+    --hash=sha256:50f3c78e436b42a9583948be06961a8104cf020ebad5edfaaf2657528bef0818 \
+    --hash=sha256:634541ed794068a822fe7499f1577468b9d4641b68dd9bfb6d0eb7270f4d2a32
