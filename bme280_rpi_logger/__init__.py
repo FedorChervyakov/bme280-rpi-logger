@@ -13,29 +13,32 @@ def _configure_logging():
 
 
 def _parse_args():
+    def auto_int(val):
+        "Detect base automatically"
+        return int(val, 0)
+
     parser = argparse.ArgumentParser(
         description="""BME280 logger. Log temperature, humidity, and pressure to a file.""")
 
     parser.add_argument('filename')
     parser.add_argument('-p', '--port', help='I2C port (bus)', default=1, type=int)
-    parser.add_argument('-a', '--address', help='I2C address', default=0x76, type=int)
+    parser.add_argument('-a', '--address', help='I2C address', default=0x76, type=auto_int)
     parser.add_argument('-i', '--interval', help='sample interval in seconds', default=15, type=float)
 
     return parser.parse_args()
 
 
 def main():
-    _configure_logging
+    _configure_logging()
 
     args = _parse_args()
 
-    logging.info('Starting BME280 rpi logger')
-
-    log_file = args.log_file
-    sample_interval = args.sample_interval
+    log_file = args.filename
+    sample_interval = args.interval
     address = args.address
     port = args.port
 
+    logging.info('Starting BME280 rpi logger')
     logging.info('Writing measurements to %s', log_file)
     logging.info('I2C port: %s, address: %s', port, address)
     logging.info('Sample interval: %s s', sample_interval)
