@@ -1,24 +1,68 @@
+import os
+import sys
+import time
+import logging
+import argparse
+
 import smbus2
 import bme280
 
-def main():
 
-    port = 1
-    address = 0x76
+def _configure_logging():
+    logging.basicConfig(level=logging.INFO)
+
+
+def _parse_args():
+    parser = argparse.ArgumentParser(
+        description="""BME280 logger. Log temperature, humidity, and pressure to a file.""")
+
+    parser.add_argument('filename')
+    parser.add_argument('-p', '--port', help='I2C port (bus)', default=1, type=int)
+    parser.add_argument('-a', '--address', help='I2C address', default=0x76, type=int)
+    parser.add_argument('-i', '--interval', help='sample interval in seconds', default=15, type=float)
+
+    return parser.parse_args()
+
+
+def main():
+    _configure_logging
+
+    args = _parse_args()
+
+    logging.info('Starting BME280 rpi logger')
+
+    log_file = args.log_file
+    sample_interval = args.sample_interval
+    address = args.address
+    port = args.port
+
+    logging.info('Writing measurements to %s', log_file)
+    logging.info('I2C port: %s, address: %s', port, address)
+    logging.info('Sample interval: %s s', sample_interval)
+
     bus = smbus2.SMBus(port)
 
+    logging.info('Loading calibration parameters')
+
     calibration_params = bme280.load_calibration_params(bus, address)
+    logging.debug('Loaded calibration parameters from the device: %s', calibration_params)
 
-    # the sample method will take a single reading and return a
-    # compensated_reading object
-    data = bme280.sample(bus, address, calibration_params)
+    # create log file and write header
+    if not os.path.exists(log_file):
+        logging.info('Log file does not exist. Creating %s and writing header', log_file)
+        with open(log_file, 'w') as f:
+            f.write('timestamp,temperature,humidity,pressure\n')
 
-    # the compensated_reading class has the following attributes
-    print(data.id)
-    print(data.timestamp)
-    print(data.temperature)
-    print(data.pressure)
-    print(data.humidity)
+    logging.info('Starting sampling')
+    while True:
+        data = bme280.sample(bus, address, calibration_params)
+        logging.debug('Acquired sample: %s', data)
 
-    # there is a handy string representation too
-    print(data)
+        with open(log_file, 'a') as f:
+            f.writelines(f'{data.timestamp},{data.temperature},{data.humidity},{data.pressure}\n')
+
+        time.sleep(sample_interval)
+
+
+if __name__ == '__main__':
+    main()
