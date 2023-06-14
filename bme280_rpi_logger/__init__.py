@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 import logging
 import argparse
@@ -23,7 +22,10 @@ def _parse_args():
     parser.add_argument('filename')
     parser.add_argument('-p', '--port', help='I2C port (bus)', default=1, type=int)
     parser.add_argument('-a', '--address', help='I2C address', default=0x76, type=auto_int)
-    parser.add_argument('-i', '--interval', help='sample interval in seconds', default=15, type=float)
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-i', '--interval', help='sample interval in seconds', default=15, type=float)
+    group.add_argument('-1', '--one-shot', help='sample once, append result to a file, and exit', action='store_true')
 
     return parser.parse_args()
 
@@ -41,7 +43,7 @@ def main():
     logging.info('Starting BME280 rpi logger')
     logging.info('Writing measurements to %s', log_file)
     logging.info('I2C port: %s, address: %s', port, address)
-    logging.info('Sample interval: %s s', sample_interval)
+    logging.info('Sample interval: %s', 'one-shot mode' if args.one_shot else str(args.interval) + ' s')
 
     bus = smbus2.SMBus(port)
 
@@ -57,14 +59,27 @@ def main():
             f.write('timestamp,temperature,humidity,pressure\n')
 
     logging.info('Starting sampling')
-    while True:
-        data = bme280.sample(bus, address, calibration_params)
-        logging.debug('Acquired sample: %s', data)
+    retries = 3
+    while retries:
+        try:
+            data = bme280.sample(bus, address, calibration_params)
+            logging.debug('Acquired sample: %s', data)
 
-        with open(log_file, 'a') as f:
-            f.writelines(f'{data.timestamp},{data.temperature},{data.humidity},{data.pressure}\n')
+            with open(log_file, 'a') as f:
+                f.writelines(f'{data.timestamp},{data.temperature},{data.humidity},{data.pressure}\n')
 
-        time.sleep(sample_interval)
+            if args.one_shot:
+                break
+
+            time.sleep(sample_interval)
+        except PermissionError as e:
+            logging.exception(e)
+            break
+        except Exception as e:
+            logging.exception("Caught %s, retrying.", e)
+            retries -= 1
+            continue
+
 
 
 if __name__ == '__main__':
